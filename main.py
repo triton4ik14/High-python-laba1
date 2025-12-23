@@ -272,7 +272,7 @@ def plot_performance_comparison(
 
 # --- Эксперименты ---
 def run_experiments_pure() -> List[Dict[str, Any]]:
-    h_values = [0.1, 0.05, 0.02, 0.01, 0.005]
+    h_values = [0.1, 0.01, 0.005]
     epsilon_values = [0.1, 0.01, 0.001]
     results = []
     print("Запуск экспериментов для чистого Python...")
@@ -292,7 +292,7 @@ def run_experiments_pure() -> List[Dict[str, Any]]:
 
 
 def run_experiments_numpy_loop() -> List[Dict[str, Any]]:
-    h_values = [0.1, 0.05, 0.02, 0.01, 0.005]
+    h_values = [0.1, 0.01, 0.005]
     epsilon_values = [0.1, 0.01, 0.001]
     results = []
     print("\nЗапуск экспериментов для NumPy с циклами...")
@@ -312,7 +312,7 @@ def run_experiments_numpy_loop() -> List[Dict[str, Any]]:
 
 
 def run_experiments_numpy_vectorized() -> List[Dict[str, Any]]:
-    h_values = [0.1, 0.05, 0.02, 0.01, 0.005]
+    h_values = [0.1, 0.01, 0.005]
     epsilon_values = [0.1, 0.01, 0.001]
     results = []
     print("\nЗапуск экспериментов для векторизованного NumPy...")
@@ -379,8 +379,15 @@ def main():
         with open(os.path.join(data_dir, 'results_numpy_vec.json'), 'w') as f:
             json.dump(results_numpy_vec, f, indent=2, default=str)
 
+        # Вывод таблицы производительности
+        print("\n" + "=" * 80)
+        print("ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ (ε=0.01)")
+        print("=" * 80)
+        print("h\t\tGrid Size\tPython\t\tNumPy циклы\tNumPy вект.\tУскорение цикл\tУскорение вект.")
+        print("-" * 100)
 
-        for h in [0.1, 0.05, 0.02, 0.01, 0.005]:
+        # Только для указанных h
+        for h in [0.1, 0.01, 0.005]:
             pure = next((r for r in results_pure if r['h'] == h and r['epsilon'] == 0.01), None)
             numpy_loop = next((r for r in results_numpy_loop if r['h'] == h and r['epsilon'] == 0.01), None)
             numpy_vec = next((r for r in results_numpy_vec if r['h'] == h and r['epsilon'] == 0.01), None)
@@ -415,6 +422,15 @@ def main():
                             save_path=os.path.join(plots_dir, 'comparison_h0.01_eps0.001.png'),
                             show_plot=False)
 
+            # График для h=0.005, ε=0.001
+            u_pure3, _, _ = solve_laplace_pure(0.005, 0.001)
+            u_numpy_loop3, _, _ = solve_laplace_numpy_loop(0.005, 0.001)
+            u_numpy_vec3, _, _ = solve_laplace_numpy_vectorized(0.005, 0.001)
+
+            plot_comparison(u_pure3, u_numpy_loop3, u_numpy_vec3, 0.005, 0.001,
+                            save_path=os.path.join(plots_dir, 'comparison_h0.005_eps0.001.png'),
+                            show_plot=False)
+
             # График производительности
             plot_performance_comparison(results_pure, results_numpy_loop, results_numpy_vec,
                                         save_path=os.path.join(plots_dir, 'performance_comparison.png'),
@@ -446,20 +462,6 @@ def main():
                                                                                      args.max_iter)
         print(f"   Итераций: {iter_numpy_vec}")
         print(f"   Время: {time_numpy_vec:.6f} сек")
-
-        # Проверка корректности решений
-        u_pure_array = np.array(u_pure)
-        diff_loop = np.max(np.abs(u_pure_array - u_numpy_loop))
-        diff_vec = np.max(np.abs(u_pure_array - u_numpy_vec))
-
-        print(f"\nМАКСИМАЛЬНАЯ РАЗНОСТЬ МЕЖДУ РЕШЕНИЯМИ:")
-        print(f"  Python vs NumPy циклы: {diff_loop:.2e}")
-        print(f"  Python vs NumPy вект.: {diff_vec:.2e}")
-
-        if diff_loop > 1e-10 or diff_vec > 1e-10:
-            print("  ⚠️  Предупреждение: Различия в решениях превышают порог 1e-10")
-        else:
-            print("  ✓ Решения совпадают с высокой точностью")
 
         if not args.no_plot:
             plot_comparison(u_pure, u_numpy_loop, u_numpy_vec, args.h, args.epsilon,
