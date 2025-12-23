@@ -1,12 +1,7 @@
 # Лабораторная работа №1
-# Вариант №5
+##### Вариант №5
+##### Бобришов Роман, МКН-418Б
 ## Решение задачи Дирихле для уравнения Лапласа методом Гаусса-Зейделя
-### Содержание
-1. [Постановка задачи](#постановка-задачи)
-2. [Теоретическая часть](#теоретическая-часть)
-3. [Практическая часть](#практическая-часть)
-4. [Результаты запуска](#результаты-запуска)
-5. [Выводы](#выводы)
 
 ### Постановка задачи
 
@@ -59,46 +54,8 @@ python main.py --method experiments
 ### Практическая часть
 #### Ключевые функции
 
-1. **Чистый Python** (`gauss_seidel_pure.py`):
+1. **Граничные условия** (`boundary_conditions(x: float, y: float, side: str) -> float`):
 ```python
-def solve_laplace_pure(
-    h: float,
-    epsilon: float,
-    max_iter: int = 10000
-) -> tuple[List[List[float]], int, float]:
-    """
-    Решение уравнения Лапласа методом Гаусса-Зейделя на чистом Python.
-        h: Шаг сетки
-        epsilon: Точность решения
-        max_iter: Максимальное количество итерацийъ
-    """
-```
-
-2. **С использованием NumPy** (`gauss_seidel_numpy.py`):
-```python 
-def solve_laplace_numpy(
-    h: float,
-    epsilon: float,
-    max_iter: int = 10000
-) -> tuple[np.ndarray, int, float]:
-    """
-    Решение уравнения Лапласа методом Гаусса-Зейделя с использованием NumPy.
-        h: Шаг сетки
-        epsilon: Точность решения
-        max_iter: Максимальное количество итераций
-    """
-```
-
-#### Граничные условия
-```python
-def boundary_conditions(x: float, y: float, side: str) -> float:
-    """
-    Вычисление граничных условий.
-        x: Координата x
-        y: Координата y
-        side: Сторона границы ('left', 'right', 'bottom', 'top')
-        Возвращает значение функции на границе
-    """
     if side == 'left':    # x = 0
         return -19*y**2 - 17*y + 15
     elif side == 'right': # x = 1
@@ -107,47 +64,67 @@ def boundary_conditions(x: float, y: float, side: str) -> float:
         return 18*x**2 + 16*x + 15
     else:  # side == 'top', y = 1
         return 18*x**2 - 24*x - 21
+    """
+    Параметры:
+    x, y - координаты точки
+    side - сторона ('left', 'right', 'bottom', 'top')
+    """
 ```
 
----
+2. **Решает уравнение Лапласа на чистом Python** (`solve_laplace_pure(h: float, epsilon: float, max_iter: int = 10000)`):
+```
+    """
+    Алгоритм: Метод Якоби (итерационное усреднение соседей)
+    Формула обновления: u[i][j] = (u[i+1][j] + u[i-1][j] + u[i][j+1] + u[i][j-1]) / 4.0
+    Критерий остановки: error < epsilon или достижение max_iter
+    """
+```
+3. **Решает уравнение Лапласа c использованием NumPy-циклы** (`solve_laplace_numpy_loop(h: float, epsilon: float, max_iter: int = 10000)`):
+```
+    """
+    Особенность: Использует NumPy массивы, но обновление через циклы
+    Преимущество: Быстрее чистого Python за счет оптимизированных операций NumPy
+    """
+```
+4. **Решает уравнение Лапласа c использованием NumPy-векторизация** (`solve_laplace_numpy_vectorized(h: float, epsilon: float, max_iter: int = 10000)`):
+```
+    """
+    Особенность: Использует срезы массивов для одновременного обновления всех точек
+    Формула: $$u[1:n, 1:n] = (u[2:n+1, 1:n] + u[0:n-1, 1:n] + u[1:n, 2:n+1] + u[1:n, 0:n-1]) / 4.0$$
+    Преимущество: Максимальная производительность
+    """
+```
 
 ### Результаты запуска
 *Время в секундах*
-#### Таблица 1 - Время выполнения (чистый Python)
+## Сравнение времени выполнения
 
-| h     | ε = 0.1 | ε = 0.01 | ε = 0.001 |
-|-------|---------|----------|-----------|
-| 0.1   | 0.0010  | 0.0010   | 0.0010    |
-| 0.01  | 0.2558  | 1.5558   | 3.8710    |
-| 0.005 | 1.1764  | 11.4300  | 45.9635   |
+| h     | ε       | Чистый Python | NumPy с циклами | Векторизованный NumPy |
+|-------|---------|---------------|-----------------|-----------------------|
+| 0.1   | 0.1     | 0.0000        | 0.0009          | 0.0011               |
+| 0.1   | 0.01    | 0.0000        | 0.0014          | 0.0017               |
+| 0.1   | 0.001   | 0.0000        | 0.0024          | 0.0012               |
+| 0.01  | 0.1     | 0.2381        | 0.5833          | 0.0062               |
+| 0.01  | 0.01    | 1.4180        | 3.3540          | 0.0415               |
+| 0.01  | 0.001   | 3.4944        | 8.5118          | 0.1291               |
+| 0.005 | 0.1     | 1.0684        | 2.5856          | 0.0235               |
+| 0.005 | 0.01    | 8.3621        | 19.9247         | 0.1952               |
+| 0.005 | 0.001   | 34.4215       | 82.3450         | 1.0471               |
 
-#### Таблица 2 - Время выполнения (NumPy)
+## Количество итераций
 
-| h     | ε = 0.1 | ε = 0.01 | ε = 0.001 |
-|-------|---------|----------|-----------|
-| 0.1   | 0.0005  | 0.0021   | 0.0023    |
-| 0.01  | 0.0097  | 0.1109   | 0.2155    |
-| 0.005 | 0.0374  | 0.2278   | 1.1666    |
+| h     | ε       | Чистый Python | NumPy с циклами | Векторизованный NumPy |
+|-------|---------|---------------|-----------------|-----------------------|
+| 0.1   | 0.1     | 20            | 20              | 33                   |
+| 0.1   | 0.01    | 34            | 34              | 71                   |
+| 0.1   | 0.001   | 56            | 56              | 116                  |
+| 0.01  | 0.1     | 141           | 141             | 150                  |
+| 0.01  | 0.01    | 824           | 824             | 1054                 |
+| 0.01  | 0.001   | 2070          | 2070            | 3297                 |
+| 0.005 | 0.1     | 158           | 158             | 163                  |
+| 0.005 | 0.01    | 1226          | 1226            | 1362                 |
+| 0.005 | 0.001   | 5059          | 5059            | 7407                 |
 
-#### Таблица 3 - Время выполнения (Numba)
-
-| h     | ε = 0.1 | ε = 0.01 | ε = 0.001 |
-|-------|---------|----------|-----------|
-| 0.1   | 0.0000  | 0.0007   | 0.7443    |
-| 0.01  | 0.0032  | 0.0190   | 0.0001    |
-| 0.005 | 0.0163  | 0.01869  | 0.0001    |
-
-#### Таблица 4 - Количество итераций
-
-|     | h     | ε = 0.1 | ε = 0.01 | ε = 0.001 |
-|-----|-------|---------|----------|-----------|
-|numpy| 0.1   | 48      | 71       | 447       |
-|     | 0.01  | 52      | 152      | 452       |
-|     | 0.005 | 53      | 153      | 453       |
-|-----|-------|---------|----------|-----------|
-|numba| 0.1   | 20      | 34       | 56        |
-|     | 0.01  | 141     | 824      | 2070      |
-|     | 0.005 | 158     | 1226     | 5059      |
 
 
 ### Выводы
@@ -179,14 +156,12 @@ import sys
 import os
 import json
 import argparse
-from typing import List, Tuple, Dict, Any, Optional
+from typing import List, Tuple, Dict, Any
 import numpy as np
 import matplotlib.pyplot as plt
 
-#Numba
-from numba import njit
 
-#Boundary conditions for pure Python and NumPy
+# --- Граничные условия ---
 def boundary_conditions(x: float, y: float, side: str) -> float:
     if side == 'left':
         return -19 * y ** 2 - 17 * y + 15
@@ -199,21 +174,8 @@ def boundary_conditions(x: float, y: float, side: str) -> float:
     else:
         raise ValueError(f"Неизвестная сторона: {side}")
 
-#Boundary conditions for Numba
-@njit(inline='always')
-def boundary_conditions_numba(x, y, side):
-    if side == 0:
-        return -19 * y ** 2 - 17 * y + 15
-    elif side == 1:
-        return -19 * y ** 2 - 57 * y + 49
-    elif side == 2:
-        return 18 * x ** 2 + 16 * x + 15
-    elif side == 3:
-        return 18 * x ** 2 - 24 * x - 21
-    else:
-        return 0.0
 
-#Grid initialization
+# --- Инициализация сетки ---
 def initialize_grid_pure(h: float) -> Tuple[List[List[float]], int]:
     n = int(1 / h)
     grid_size = n + 1
@@ -227,6 +189,7 @@ def initialize_grid_pure(h: float) -> Tuple[List[List[float]], int]:
         u[0][j] = boundary_conditions(0, y, 'left')
         u[n][j] = boundary_conditions(1, y, 'right')
     return u, n
+
 
 def initialize_grid_numpy(h: float) -> Tuple[np.ndarray, int]:
     n = int(1 / h)
@@ -242,22 +205,8 @@ def initialize_grid_numpy(h: float) -> Tuple[np.ndarray, int]:
         u[n, j] = boundary_conditions(1, y, 'right')
     return u, n
 
-@njit
-def initialize_grid_numba(h):
-    n = int(1 / h)
-    grid_size = n + 1
-    u = np.zeros((grid_size, grid_size), dtype=np.float64)
-    for i in range(grid_size):
-        x = i * h
-        u[i, 0] = boundary_conditions_numba(x, 0, 2)      # bottom
-        u[i, n] = boundary_conditions_numba(x, 1, 3)      # top
-    for j in range(grid_size):
-        y = j * h
-        u[0, j] = boundary_conditions_numba(0, y, 0)      # left
-        u[n, j] = boundary_conditions_numba(1, y, 1)      # right
-    return u, n
 
-#Laplace
+# --- Решатели Лапласа ---
 def solve_laplace_pure(h: float, epsilon: float, max_iter: int = 10000) -> Tuple[List[List[float]], int, float]:
     if h <= 0:
         raise ValueError("Шаг сетки должен быть положительным")
@@ -269,15 +218,18 @@ def solve_laplace_pure(h: float, epsilon: float, max_iter: int = 10000) -> Tuple
     iteration = 0
     error = float('inf')
     while iteration < max_iter and error > epsilon:
+        # Классический метод конечных разностей
         for i in range(1, n):
             for j in range(1, n):
                 u[i][j] = (u[i + 1][j] + u[i - 1][j] + u[i][j + 1] + u[i][j - 1]) / 4.0
+        # Вычисление максимальной ошибки
         error = 0.0
         for i in range(1, n):
             for j in range(1, n):
                 err = abs(u[i][j] - u_old[i][j])
                 if err > error:
                     error = err
+        # Обновление старого решения
         for i in range(1, n):
             for j in range(1, n):
                 u_old[i][j] = u[i][j]
@@ -285,7 +237,8 @@ def solve_laplace_pure(h: float, epsilon: float, max_iter: int = 10000) -> Tuple
     end_time = time.time()
     return u, iteration, end_time - start_time
 
-def solve_laplace_numpy(h: float, epsilon: float, max_iter: int = 10000) -> Tuple[np.ndarray, int, float]:
+
+def solve_laplace_numpy_loop(h: float, epsilon: float, max_iter: int = 10000) -> Tuple[np.ndarray, int, float]:
     if h <= 0:
         raise ValueError("Шаг сетки должен быть положительным")
     if epsilon <= 0:
@@ -296,52 +249,42 @@ def solve_laplace_numpy(h: float, epsilon: float, max_iter: int = 10000) -> Tupl
     error = float('inf')
     while iteration < max_iter and error > epsilon:
         u_old = u.copy()
+        for i in range(1, n):
+            for j in range(1, n):
+                u[i, j] = 0.25 * (u[i + 1, j] + u[i - 1, j] + u[i, j + 1] + u[i, j - 1])
+        error = np.max(np.abs(u[1:n, 1:n] - u_old[1:n, 1:n]))
+        iteration += 1
+    end_time = time.perf_counter()
+    return u, iteration, end_time - start_time
+
+
+def solve_laplace_numpy_vectorized(h: float, epsilon: float, max_iter: int = 10000) -> Tuple[np.ndarray, int, float]:
+    if h <= 0:
+        raise ValueError("Шаг сетки должен быть положительным")
+    if epsilon <= 0:
+        raise ValueError("Точность должна быть положительной")
+    start_time = time.perf_counter()
+    u, n = initialize_grid_numpy(h)
+    iteration = 0
+    error = float('inf')
+    while iteration < max_iter and error > epsilon:
+        u_old = u.copy()
+        # Векторизованное обновление внутренних точек
         u[1:n, 1:n] = (u[2:n + 1, 1:n] + u[0:n - 1, 1:n] + u[1:n, 2:n + 1] + u[1:n, 0:n - 1]) / 4.0
         error = np.max(np.abs(u[1:n, 1:n] - u_old[1:n, 1:n]))
         iteration += 1
     end_time = time.perf_counter()
     return u, iteration, end_time - start_time
 
-@njit
-def solve_laplace_numba_core(h, epsilon, max_iter=10000):
-    u, n = initialize_grid_numba(h)
-    u_old = np.copy(u)
-    iteration = 0
-    error = 1e20
-    while iteration < max_iter and error > epsilon:
-        for i in range(1, n):
-            for j in range(1, n):
-                u[i, j] = 0.25 * (u[i+1, j] + u[i-1, j] + u[i, j+1] + u[i, j-1])
-        error = 0.0
-        for i in range(1, n):
-            for j in range(1, n):
-                err = abs(u[i, j] - u_old[i, j])
-                if err > error:
-                    error = err
-        for i in range(1, n):
-            for j in range(1, n):
-                u_old[i, j] = u[i, j]
-        iteration += 1
-    return u, iteration
 
-def solve_laplace_numba(h: float, epsilon: float, max_iter: int = 10000) -> Tuple[np.ndarray, int, float]:
-    if h <= 0:
-        raise ValueError("Шаг сетки должен быть положительным")
-    if epsilon <= 0:
-        raise ValueError("Точность должна быть положительной")
-    start_time = time.perf_counter()
-    u, iteration = solve_laplace_numba_core(h, epsilon, max_iter)
-    end_time = time.perf_counter()
-    return u, iteration, end_time - start_time
-
-#Experiments
+# --- Визуализация ---
 def plot_comparison(
         u_pure: List[List[float]],
         u_numpy: np.ndarray,
+        u_numpy_vec: np.ndarray,
         h: float,
         epsilon: float,
-        u_numba: Optional[np.ndarray] = None,
-        save_path: Optional[str] = None,
+        save_path: str = None,
         show_plot: bool = True
 ) -> None:
     u_pure_array = np.array(u_pure)
@@ -350,79 +293,71 @@ def plot_comparison(
     y = np.linspace(0, 1, n)
     X, Y = np.meshgrid(x, y)
 
-    fig = plt.figure(figsize=(18, 10))
+    fig = plt.figure(figsize=(15, 10))
 
+    # 3D графики
     ax1 = fig.add_subplot(231, projection='3d')
     ax1.plot_surface(X, Y, u_pure_array.T, cmap='viridis', alpha=0.8)
     ax1.set_title('Python (3D)')
     ax1.set_xlabel('X')
     ax1.set_ylabel('Y')
+    ax1.view_init(30, 45)
 
     ax2 = fig.add_subplot(232, projection='3d')
     ax2.plot_surface(X, Y, u_numpy.T, cmap='plasma', alpha=0.8)
-    ax2.set_title('NumPy (3D)')
+    ax2.set_title('NumPy с циклами (3D)')
     ax2.set_xlabel('X')
     ax2.set_ylabel('Y')
+    ax2.view_init(30, 45)
 
-    if u_numba is not None:
-        ax3 = fig.add_subplot(233, projection='3d')
-        ax3.plot_surface(X, Y, u_numba.T, cmap='cividis', alpha=0.8)
-        ax3.set_title('Numba (3D)')
-        ax3.set_xlabel('X')
-        ax3.set_ylabel('Y')
-    else:
-        ax3 = fig.add_subplot(233, projection='3d')
-        difference = u_pure_array - u_numpy
-        surf3 = ax3.plot_surface(X, Y, difference.T, cmap='coolwarm', alpha=0.8)
-        ax3.set_title('Разность')
-        ax3.set_xlabel('X')
-        ax3.set_ylabel('Y')
-        fig.colorbar(surf3, ax=ax3, shrink=0.6)
+    ax3 = fig.add_subplot(233, projection='3d')
+    ax3.plot_surface(X, Y, u_numpy_vec.T, cmap='cividis', alpha=0.8)
+    ax3.set_title('NumPy векторизованный (3D)')
+    ax3.set_xlabel('X')
+    ax3.set_ylabel('Y')
+    ax3.view_init(30, 45)
 
+    # 2D графики (тепловые карты)
     ax4 = fig.add_subplot(234)
-    ax4.imshow(u_pure_array, cmap='viridis', extent=[0, 1, 0, 1], origin='lower')
+    im1 = ax4.imshow(u_pure_array, cmap='viridis', extent=[0, 1, 0, 1], origin='lower')
     ax4.set_title('Python (2D)')
     ax4.set_xlabel('X')
     ax4.set_ylabel('Y')
+    plt.colorbar(im1, ax=ax4, fraction=0.046, pad=0.04)
 
     ax5 = fig.add_subplot(235)
-    ax5.imshow(u_numpy, cmap='plasma', extent=[0, 1, 0, 1], origin='lower')
-    ax5.set_title('NumPy (2D)')
+    im2 = ax5.imshow(u_numpy, cmap='plasma', extent=[0, 1, 0, 1], origin='lower')
+    ax5.set_title('NumPy с циклами (2D)')
     ax5.set_xlabel('X')
     ax5.set_ylabel('Y')
+    plt.colorbar(im2, ax=ax5, fraction=0.046, pad=0.04)
 
-    if u_numba is not None:
-        ax6 = fig.add_subplot(236)
-        ax6.imshow(u_numba, cmap='cividis', extent=[0, 1, 0, 1], origin='lower')
-        ax6.set_title('Numba (2D)')
-        ax6.set_xlabel('X')
-        ax6.set_ylabel('Y')
-    else:
-        ax6 = fig.add_subplot(236)
-        diff_img = ax6.imshow(difference, cmap='coolwarm', extent=[0, 1, 0, 1], origin='lower')
-        ax6.set_title('Разность (2D)')
-        ax6.set_xlabel('X')
-        ax6.set_ylabel('Y')
-        fig.colorbar(diff_img, ax=ax6, shrink=0.8)
+    ax6 = fig.add_subplot(236)
+    im3 = ax6.imshow(u_numpy_vec, cmap='cividis', extent=[0, 1, 0, 1], origin='lower')
+    ax6.set_title('NumPy векторизованный (2D)')
+    ax6.set_xlabel('X')
+    ax6.set_ylabel('Y')
+    plt.colorbar(im3, ax=ax6, fraction=0.046, pad=0.04)
 
-    fig.suptitle(f'Сравнение решений: h={h}, ε={epsilon}', fontsize=16)
+    fig.suptitle(f'Сравнение методов решения: h={h}, ε={epsilon}', fontsize=16, y=1.02)
     plt.tight_layout()
 
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Сохранено: {save_path}")
+        print(f"График сохранен: {save_path}")
 
     if show_plot:
         plt.show()
     else:
         plt.close()
 
+
 def plot_performance_comparison(
         results_pure: List[dict],
-        results_numpy: List[dict],
-        results_numba: Optional[List[dict]] = None,
-        save_path: Optional[str] = None,
+        results_numpy_loop: List[dict],
+        results_numpy_vec: List[dict],
+        save_path: str = None,
         show_plot: bool = True
 ) -> None:
     fig, axes = plt.subplots(2, 3, figsize=(18, 10))
@@ -434,174 +369,277 @@ def plot_performance_comparison(
         ax2 = axes[1, idx]
 
         pure_eps = [r for r in results_pure if r['epsilon'] == epsilon]
-        numpy_eps = [r for r in results_numpy if r['epsilon'] == epsilon]
-        if results_numba:
-            numba_eps = [r for r in results_numba if r['epsilon'] == epsilon]
+        numpy_loop_eps = [r for r in results_numpy_loop if r['epsilon'] == epsilon]
+        numpy_vec_eps = [r for r in results_numpy_vec if r['epsilon'] == epsilon]
 
         pure_eps.sort(key=lambda x: x['grid_size'])
-        numpy_eps.sort(key=lambda x: x['grid_size'])
-        if results_numba:
-            numba_eps.sort(key=lambda x: x['grid_size'])
+        numpy_loop_eps.sort(key=lambda x: x['grid_size'])
+        numpy_vec_eps.sort(key=lambda x: x['grid_size'])
 
         grid_sizes = [r['grid_size'] for r in pure_eps]
-        times_pure = [r['time'] for r in pure_eps]
-        times_numpy = [r['time'] for r in numpy_eps]
-        iterations_pure = [r['iterations'] for r in pure_eps]
-        iterations_numpy = [r['iterations'] for r in numpy_eps]
 
-        ax1.plot(grid_sizes, times_pure, 'o-', color=colors[idx], label='Python', linewidth=2)
-        ax1.plot(grid_sizes, times_numpy, 's--', color=colors[idx], label='NumPy', linewidth=2)
-        if results_numba:
-            times_numba = [r['time'] for r in numba_eps]
-            ax1.plot(grid_sizes, times_numba, 'd-.', color=colors[idx], label='Numba', linewidth=2)
+        times_pure = [r['time'] for r in pure_eps]
+        times_numpy_loop = [r['time'] for r in numpy_loop_eps]
+        times_numpy_vec = [r['time'] for r in numpy_vec_eps]
+
+        iterations_pure = [r['iterations'] for r in pure_eps]
+        iterations_numpy_loop = [r['iterations'] for r in numpy_loop_eps]
+        iterations_numpy_vec = [r['iterations'] for r in numpy_vec_eps]
+
+        # График времени
+        ax1.plot(grid_sizes, times_pure, 'o-', color=colors[idx], label='Python', linewidth=2, markersize=6)
+        ax1.plot(grid_sizes, times_numpy_loop, 's--', color=colors[idx], label='NumPy циклы', linewidth=2, markersize=6)
+        ax1.plot(grid_sizes, times_numpy_vec, 'd-.', color=colors[idx], label='NumPy вект.', linewidth=2, markersize=6)
         ax1.set_xlabel('Размер сетки')
         ax1.set_ylabel('Время (сек)')
-        ax1.set_title(f'Время (ε={epsilon})')
+        ax1.set_title(f'Время выполнения (ε={epsilon})')
         ax1.grid(True, alpha=0.3)
         ax1.legend()
         ax1.set_yscale('log')
 
-        ax2.plot(grid_sizes, iterations_pure, 'o-', color=colors[idx], label='Python', linewidth=2)
-        ax2.plot(grid_sizes, iterations_numpy, 's--', color=colors[idx], label='NumPy', linewidth=2)
-        if results_numba:
-            iterations_numba = [r['iterations'] for r in numba_eps]
-            ax2.plot(grid_sizes, iterations_numba, 'd-.', color=colors[idx], label='Numba', linewidth=2)
+        # График итераций
+        ax2.plot(grid_sizes, iterations_pure, 'o-', color=colors[idx], label='Python', linewidth=2, markersize=6)
+        ax2.plot(grid_sizes, iterations_numpy_loop, 's--', color=colors[idx], label='NumPy циклы', linewidth=2,
+                 markersize=6)
+        ax2.plot(grid_sizes, iterations_numpy_vec, 'd-.', color=colors[idx], label='NumPy вект.', linewidth=2,
+                 markersize=6)
         ax2.set_xlabel('Размер сетки')
-        ax2.set_ylabel('Итерации')
-        ax2.set_title(f'Итерации (ε={epsilon})')
+        ax2.set_ylabel('Количество итераций')
+        ax2.set_title(f'Итерации сходимости (ε={epsilon})')
         ax2.grid(True, alpha=0.3)
         ax2.legend()
 
-    plt.suptitle('Сравнение производительности', fontsize=16)
+    plt.suptitle('Сравнение производительности методов', fontsize=16, y=1.02)
     plt.tight_layout()
 
     if save_path:
         os.makedirs(os.path.dirname(save_path), exist_ok=True)
         plt.savefig(save_path, dpi=300, bbox_inches='tight')
-        print(f"Сохранено: {save_path}")
+        print(f"График производительности сохранен: {save_path}")
 
     if show_plot:
         plt.show()
     else:
         plt.close()
 
+
+# --- Эксперименты ---
 def run_experiments_pure() -> List[Dict[str, Any]]:
     h_values = [0.1, 0.01, 0.005]
     epsilon_values = [0.1, 0.01, 0.001]
     results = []
+    print("Запуск экспериментов для чистого Python...")
     for h in h_values:
         for epsilon in epsilon_values:
             u, iterations, time_taken = solve_laplace_pure(h, epsilon)
-            result = {'h': h, 'epsilon': epsilon, 'iterations': iterations, 'time': time_taken,
-                      'grid_size': int(1 / h) + 1}
+            result = {
+                'h': h,
+                'epsilon': epsilon,
+                'iterations': iterations,
+                'time': time_taken,
+                'grid_size': int(1 / h) + 1
+            }
             results.append(result)
-            print(f"Python: h={h}, ε={epsilon}, итераций={iterations}, время={time_taken:.4f}с")
+            print(f"  h={h}, ε={epsilon}: {iterations} итераций, {time_taken:.4f} сек")
     return results
 
-def run_experiments_numpy() -> List[Dict[str, Any]]:
+
+def run_experiments_numpy_loop() -> List[Dict[str, Any]]:
     h_values = [0.1, 0.01, 0.005]
     epsilon_values = [0.1, 0.01, 0.001]
     results = []
+    print("\nЗапуск экспериментов для NumPy с циклами...")
     for h in h_values:
         for epsilon in epsilon_values:
-            u, iterations, time_taken = solve_laplace_numpy(h, epsilon)
-            result = {'h': h, 'epsilon': epsilon, 'iterations': iterations, 'time': time_taken,
-                      'grid_size': int(1 / h) + 1}
+            u, iterations, time_taken = solve_laplace_numpy_loop(h, epsilon)
+            result = {
+                'h': h,
+                'epsilon': epsilon,
+                'iterations': iterations,
+                'time': time_taken,
+                'grid_size': int(1 / h) + 1
+            }
             results.append(result)
-            print(f"NumPy: h={h}, ε={epsilon}, итераций={iterations}, время={time_taken:.4f}с")
+            print(f"  h={h}, ε={epsilon}: {iterations} итераций, {time_taken:.4f} сек")
     return results
 
-def run_experiments_numba() -> List[Dict[str, Any]]:
+
+def run_experiments_numpy_vectorized() -> List[Dict[str, Any]]:
     h_values = [0.1, 0.01, 0.005]
     epsilon_values = [0.1, 0.01, 0.001]
     results = []
+    print("\nЗапуск экспериментов для векторизованного NumPy...")
     for h in h_values:
         for epsilon in epsilon_values:
-            u, iterations, time_taken = solve_laplace_numba(h, epsilon)
-            result = {'h': h, 'epsilon': epsilon, 'iterations': iterations, 'time': time_taken,
-                      'grid_size': int(1 / h) + 1}
+            u, iterations, time_taken = solve_laplace_numpy_vectorized(h, epsilon)
+            result = {
+                'h': h,
+                'epsilon': epsilon,
+                'iterations': iterations,
+                'time': time_taken,
+                'grid_size': int(1 / h) + 1
+            }
             results.append(result)
-            print(f"Numba: h={h}, ε={epsilon}, итераций={iterations}, время={time_taken:.4f}с")
+            print(f"  h={h}, ε={epsilon}: {iterations} итераций, {time_taken:.4f} сек")
     return results
 
+
+# --- Основная функция ---
 def main():
-    parser = argparse.ArgumentParser(description='Решение уравнения Лапласа')
-    parser.add_argument('--h', type=float, default=0.1, help='Шаг сетки')
-    parser.add_argument('--epsilon', type=float, default=0.01, help='Точность')
-    parser.add_argument('--max-iter', type=int, default=10000, help='Макс итераций')
-    parser.add_argument('--method', choices=['pure', 'numpy', 'numba', 'both', 'experiments'], default='both')
-    parser.add_argument('--output-dir', type=str, default='results')
-    parser.add_argument('--no-plot', action='store_true')
+    parser = argparse.ArgumentParser(
+        description='Решение уравнения Лапласа методом конечных разностей',
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Примеры использования:
+  python laplace_solver.py --h 0.1 --epsilon 0.01
+  python laplace_solver.py --method experiments --no-plot
+  python laplace_solver.py --h 0.05 --epsilon 0.001 --method both
+        """
+    )
+    parser.add_argument('--h', type=float, default=0.1,
+                        help='Шаг сетки (по умолчанию: 0.1)')
+    parser.add_argument('--epsilon', type=float, default=0.01,
+                        help='Точность решения (по умолчанию: 0.01)')
+    parser.add_argument('--max-iter', type=int, default=10000,
+                        help='Максимальное число итераций (по умолчанию: 10000)')
+    parser.add_argument('--method', choices=['pure', 'numpy_loop', 'numpy_vec', 'both', 'experiments'],
+                        default='both', help='Метод решения (по умолчанию: both)')
+    parser.add_argument('--output-dir', type=str, default='results',
+                        help='Директория для сохранения результатов (по умолчанию: results)')
+    parser.add_argument('--no-plot', action='store_true',
+                        help='Не показывать графики')
+
     args = parser.parse_args()
+
+    # Создание директорий для результатов
     os.makedirs(args.output_dir, exist_ok=True)
     plots_dir = os.path.join(args.output_dir, 'plots')
     os.makedirs(plots_dir, exist_ok=True)
+    data_dir = os.path.join(args.output_dir, 'data')
+    os.makedirs(data_dir, exist_ok=True)
 
     if args.method == 'experiments':
+
         results_pure = run_experiments_pure()
-        results_numpy = run_experiments_numpy()
-        results_numba = run_experiments_numba()
-        with open(os.path.join(args.output_dir, 'results_pure.json'), 'w') as f:
-            json.dump(results_pure, f, indent=2)
-        with open(os.path.join(args.output_dir, 'results_numpy.json'), 'w') as f:
-            json.dump(results_numpy, f, indent=2)
-        with open(os.path.join(args.output_dir, 'results_numba.json'), 'w') as f:
-            json.dump(results_numba, f, indent=2)
-        print("\nТаблица результатов (ε=0.01):")
-        print("h\tPython\tNumPy\tNumba\tNumPy ускор\tNumba ускор")
+        results_numpy_loop = run_experiments_numpy_loop()
+        results_numpy_vec = run_experiments_numpy_vectorized()
+
+        # Сохранение результатов
+        with open(os.path.join(data_dir, 'results_pure.json'), 'w') as f:
+            json.dump(results_pure, f, indent=2, default=str)
+        with open(os.path.join(data_dir, 'results_numpy_loop.json'), 'w') as f:
+            json.dump(results_numpy_loop, f, indent=2, default=str)
+        with open(os.path.join(data_dir, 'results_numpy_vec.json'), 'w') as f:
+            json.dump(results_numpy_vec, f, indent=2, default=str)
+
+        # Вывод таблицы производительности
+        print("\n" + "=" * 80)
+        print("ТАБЛИЦА ПРОИЗВОДИТЕЛЬНОСТИ (ε=0.01)")
+        print("=" * 80)
+        print("h\t\tGrid Size\tPython\t\tNumPy циклы\tNumPy вект.\tУскорение цикл\tУскорение вект.")
+        print("-" * 100)
+
+        # Только для указанных h
         for h in [0.1, 0.01, 0.005]:
             pure = next((r for r in results_pure if r['h'] == h and r['epsilon'] == 0.01), None)
-            numpy = next((r for r in results_numpy if r['h'] == h and r['epsilon'] == 0.01), None)
-            numba = next((r for r in results_numba if r['h'] == h and r['epsilon'] == 0.01), None)
-            if pure and numpy and numba:
-                speedup_numpy = pure['time'] / numpy['time'] if numpy['time'] > 0 else 0
-                speedup_numba = pure['time'] / numba['time'] if numba['time'] > 0 else 0
-                print(f"{h}\t{pure['time']:.4f}\t{numpy['time']:.4f}\t{numba['time']:.4f}\t{speedup_numpy:.2f}x\t{speedup_numba:.2f}x")
+            numpy_loop = next((r for r in results_numpy_loop if r['h'] == h and r['epsilon'] == 0.01), None)
+            numpy_vec = next((r for r in results_numpy_vec if r['h'] == h and r['epsilon'] == 0.01), None)
+
+            if pure and numpy_loop and numpy_vec:
+                speedup_loop = pure['time'] / numpy_loop['time'] if numpy_loop['time'] > 0 else 0
+                speedup_vec = pure['time'] / numpy_vec['time'] if numpy_vec['time'] > 0 else 0
+
+                print(f"{h:.3f}\t\t{pure['grid_size']}x{pure['grid_size']}\t"
+                      f"{pure['time']:.6f}\t\t{numpy_loop['time']:.6f}\t\t{numpy_vec['time']:.6f}\t\t"
+                      f"{speedup_loop:.2f}x\t\t{speedup_vec:.2f}x")
+
+        # Создание графиков сравнения
         if not args.no_plot:
-            test_h, test_eps = 0.1, 0.01
-            u_pure, _, _ = solve_laplace_pure(test_h, test_eps)
-            u_numpy, _, _ = solve_laplace_numpy(test_h, test_eps)
-            u_numba, _, _ = solve_laplace_numba(test_h, test_eps)
-            plot_comparison(u_pure, u_numpy, test_h, test_eps, u_numba=u_numba,
-                            save_path=os.path.join(plots_dir, 'comparison1.png'), show_plot=False)
-            test_h, test_eps = 0.01, 0.001
-            u_pure, _, _ = solve_laplace_pure(test_h, test_eps)
-            u_numpy, _, _ = solve_laplace_numpy(test_h, test_eps)
-            u_numba, _, _ = solve_laplace_numba(test_h, test_eps)
-            plot_comparison(u_pure, u_numpy, test_h, test_eps, u_numba=u_numba,
-                            save_path=os.path.join(plots_dir, 'comparison2.png'), show_plot=False)
-            plot_performance_comparison(results_pure, results_numpy, results_numba,
-                                        os.path.join(plots_dir, 'performance.png'), show_plot=True)
+            print("\nСоздание графиков сравнения...")
+
+            # График для h=0.1, ε=0.01
+            u_pure1, _, _ = solve_laplace_pure(0.1, 0.01)
+            u_numpy_loop1, _, _ = solve_laplace_numpy_loop(0.1, 0.01)
+            u_numpy_vec1, _, _ = solve_laplace_numpy_vectorized(0.1, 0.01)
+
+            plot_comparison(u_pure1, u_numpy_loop1, u_numpy_vec1, 0.1, 0.01,
+                            save_path=os.path.join(plots_dir, 'comparison_h0.1_eps0.01.png'),
+                            show_plot=False)
+
+            # График для h=0.01, ε=0.001
+            u_pure2, _, _ = solve_laplace_pure(0.01, 0.001)
+            u_numpy_loop2, _, _ = solve_laplace_numpy_loop(0.01, 0.001)
+            u_numpy_vec2, _, _ = solve_laplace_numpy_vectorized(0.01, 0.001)
+
+            plot_comparison(u_pure2, u_numpy_loop2, u_numpy_vec2, 0.01, 0.001,
+                            save_path=os.path.join(plots_dir, 'comparison_h0.01_eps0.001.png'),
+                            show_plot=False)
+
+            # График для h=0.005, ε=0.001
+            u_pure3, _, _ = solve_laplace_pure(0.005, 0.001)
+            u_numpy_loop3, _, _ = solve_laplace_numpy_loop(0.005, 0.001)
+            u_numpy_vec3, _, _ = solve_laplace_numpy_vectorized(0.005, 0.001)
+
+            plot_comparison(u_pure3, u_numpy_loop3, u_numpy_vec3, 0.005, 0.001,
+                            save_path=os.path.join(plots_dir, 'comparison_h0.005_eps0.001.png'),
+                            show_plot=False)
+
+            # График производительности
+            plot_performance_comparison(results_pure, results_numpy_loop, results_numpy_vec,
+                                        save_path=os.path.join(plots_dir, 'performance_comparison.png'),
+                                        show_plot=True)
+
+            print(f"\nРезультаты сохранены в директории: {args.output_dir}")
+            print(f"  - Данные: {data_dir}/")
+            print(f"  - Графики: {plots_dir}/")
+
     elif args.method == 'both':
-        print(f"\nРешение на чистом Python (h={args.h}, ε={args.epsilon}):")
+        print(f"\nСРАВНЕНИЕ МЕТОДОВ ДЛЯ h={args.h}, ε={args.epsilon}")
+        print("=" * 50)
+
+        # Чистый Python
+        print("\n1. Чистый Python:")
         u_pure, iter_pure, time_pure = solve_laplace_pure(args.h, args.epsilon, args.max_iter)
-        print(f"Итераций: {iter_pure}, Время: {time_pure:.4f}с")
-        print(f"\nРешение на NumPy (h={args.h}, ε={args.epsilon}):")
-        u_numpy, iter_numpy, time_numpy = solve_laplace_numpy(args.h, args.epsilon, args.max_iter)
-        print(f"Итераций: {iter_numpy}, Время: {time_numpy:.4f}с")
-        print(f"\nРешение с помощью Numba (h={args.h}, ε={args.epsilon}):")
-        u_numba, iter_numba, time_numba = solve_laplace_numba(args.h, args.epsilon, args.max_iter)
-        print(f"Итераций: {iter_numba}, Время: {time_numba:.4f}с")
-        speedup_numpy = time_pure / time_numpy if time_numpy > 0 else 0
-        speedup_numba = time_pure / time_numba if time_numba > 0 else 0
-        print(f"\nУскорение NumPy: {speedup_numpy:.2f}x")
-        print(f"Ускорение Numba: {speedup_numba:.2f}x")
+        print(f"   Итераций: {iter_pure}")
+        print(f"   Время: {time_pure:.6f} сек")
+
+        # NumPy с циклами
+        print("\n2. NumPy с циклами:")
+        u_numpy_loop, iter_numpy_loop, time_numpy_loop = solve_laplace_numpy_loop(args.h, args.epsilon, args.max_iter)
+        print(f"   Итераций: {iter_numpy_loop}")
+        print(f"   Время: {time_numpy_loop:.6f} сек")
+
+        # Векторизованный NumPy
+        print("\n3. Векторизованный NumPy:")
+        u_numpy_vec, iter_numpy_vec, time_numpy_vec = solve_laplace_numpy_vectorized(args.h, args.epsilon,
+                                                                                     args.max_iter)
+        print(f"   Итераций: {iter_numpy_vec}")
+        print(f"   Время: {time_numpy_vec:.6f} сек")
+
         if not args.no_plot:
-            plot_comparison(u_pure, u_numpy, args.h, args.epsilon, u_numba=u_numba,
+            plot_comparison(u_pure, u_numpy_loop, u_numpy_vec, args.h, args.epsilon,
                             save_path=os.path.join(plots_dir, f'comparison_h{args.h}_eps{args.epsilon}.png'),
                             show_plot=True)
+
     elif args.method == 'pure':
-        print(f"\nРешение на чистом Python (h={args.h}, ε={args.epsilon}):")
+        print(f"\nРешение с использованием чистого Python (h={args.h}, ε={args.epsilon}):")
         u_pure, iter_pure, time_pure = solve_laplace_pure(args.h, args.epsilon, args.max_iter)
-        print(f"Итераций: {iter_pure}, Время: {time_pure:.4f}с")
-    elif args.method == 'numpy':
-        print(f"\nРешение на NumPy (h={args.h}, ε={args.epsilon}):")
-        u_numpy, iter_numpy, time_numpy = solve_laplace_numpy(args.h, args.epsilon, args.max_iter)
-        print(f"Итераций: {iter_numpy}, Время: {time_numpy:.4f}с")
-    elif args.method == 'numba':
-        print(f"\nРешение с помощью Numba (h={args.h}, ε={args.epsilon}):")
-        u_numba, iter_numba, time_numba = solve_laplace_numba(args.h, args.epsilon, args.max_iter)
-        print(f"Итераций: {iter_numba}, Время: {time_numba:.4f}с")
+        print(f"Итераций: {iter_pure}")
+        print(f"Время: {time_pure:.6f} сек")
+
+    elif args.method == 'numpy_loop':
+        print(f"\nРешение с использованием NumPy с циклами (h={args.h}, ε={args.epsilon}):")
+        u_numpy_loop, iter_numpy_loop, time_numpy_loop = solve_laplace_numpy_loop(args.h, args.epsilon, args.max_iter)
+        print(f"Итераций: {iter_numpy_loop}")
+        print(f"Время: {time_numpy_loop:.6f} сек")
+
+    elif args.method == 'numpy_vec':
+        print(f"\nРешение с использованием векторизованного NumPy (h={args.h}, ε={args.epsilon}):")
+        u_numpy_vec, iter_numpy_vec, time_numpy_vec = solve_laplace_numpy_vectorized(args.h, args.epsilon,
+                                                                                     args.max_iter)
+        print(f"Итераций: {iter_numpy_vec}")
+        print(f"Время: {time_numpy_vec:.6f} сек")
+
 
 if __name__ == "__main__":
     main()
